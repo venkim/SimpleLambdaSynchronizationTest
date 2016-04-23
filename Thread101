@@ -1,0 +1,92 @@
+package com.venkat.samples101;
+
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+
+
+public class Thread101 {
+	int count = 0;
+	ReentrantLock luck_lock = new ReentrantLock();
+	void increment(){
+		luck_lock.lock();
+		try {
+			count = count + 1;
+		} finally {
+			luck_lock.unlock();
+		}
+
+	}
+	
+	synchronized void incSync(){
+		count++;
+	}
+	void inc(){
+		count++;
+	}
+	void tryPara(){
+		ExecutorService execr = Executors.newFixedThreadPool(200);
+		IntStream.range(0,10000).forEach(i -> execr.submit(this::incSync));
+		execr.shutdown();
+	}
+
+	/*
+	 * output from tryPara2 - may not be exactly 10k - but mostly lower.
+	 */
+	void tryPara2(){
+		ExecutorService execr = Executors.newFixedThreadPool(650);
+		IntStream.range(0,10000).forEach(i -> execr.submit(this::inc));
+		execr.shutdown();
+	}
+	public static void main(String[] args) {
+
+		Thread101 t1 = new Thread101();
+		
+		t1.tryPara() ;
+		
+	//	stop(execr);
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/**********
+		try {
+
+		} catch (InterruptedException ie){
+			Logger.getLogger(Thread101.class.getName()).log(Level.SEVERE, "Interrupted", ie);
+		} catch (Exception ee){
+			Logger.getLogger(Thread101.class.getName()).log(Level.SEVERE, "other", ee);
+		}
+		**********/
+		System.out.println( "count is " + t1.count) ;
+		// reset count - not synced
+		t1.count = 0;
+		// call the non-synced increment - get ready for arbitrary result not 10k
+		t1.tryPara2();
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/************
+		try {
+
+		} catch (InterruptedException ie){
+			Logger.getLogger(Thread101.class.getName()).log(Level.SEVERE, null, ie);
+		} catch (Exception ee){
+			Logger.getLogger(Thread101.class.getName()).log(Level.SEVERE, null, ee);
+		}
+		**********/
+		System.out.println( "count is " + t1.count) ;
+		
+	}
+
+}
